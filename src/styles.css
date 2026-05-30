@@ -25,7 +25,8 @@ input {
   font: inherit;
 }
 
-button {
+button,
+.iconButton {
   border: 1px solid #c9cec7;
   border-radius: 6px;
   background: #ffffff;
@@ -36,8 +37,24 @@ button {
   cursor: pointer;
 }
 
-button:hover {
+button:hover,
+.iconButton:hover {
   background: #f1f5f2;
+}
+
+.iconButton {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 28px;
+  padding: 0;
+  text-decoration: none;
+}
+
+.iconButton svg {
+  width: 17px;
+  height: 17px;
+  fill: currentColor;
 }
 
 button.secondary {
