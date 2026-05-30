@@ -43,8 +43,19 @@ try {
   assert.ok(projectedY.y < -65 && projectedY.y > -66, "The y basis vector should project at 60 degrees.");
 
   const exportSource = await readFile(path.join(root, "src", "export.ts"), "utf8");
+  const constantsSource = await readFile(path.join(root, "src", "constants.ts"), "utf8");
+  const constantsTranspiled = ts.transpileModule(constantsSource, {
+    compilerOptions: {
+      module: ts.ModuleKind.ES2022,
+      target: ts.ScriptTarget.ES2022,
+      verbatimModuleSyntax: true,
+    },
+  }).outputText;
+  await writeFile(path.join(tempDir, "constants.mjs"), constantsTranspiled, "utf8");
   const exportTranspiled = ts.transpileModule(
-    exportSource.replace('from "./geometry/a2"', 'from "./geometry/a2.mjs"'),
+    exportSource
+      .replace('from "./geometry/a2"', 'from "./geometry/a2.mjs"')
+      .replace('from "./constants"', 'from "./constants.mjs"'),
     {
       compilerOptions: {
         module: ts.ModuleKind.ES2022,
@@ -102,9 +113,9 @@ try {
   assert.match(tikz, /\\clip \(-3\.947,3\.947\) rectangle \(3\.947,-3\.947\);/, "TikZ export should clip to the export region.");
   assert.match(tikz, /\\definecolor\{wc\d+\}\{HTML\}\{D8E9FF\}/, "TikZ export should define alcove fill colors.");
   assert.match(tikz, /\\fill\[wc\d+\]/, "TikZ export should include alcove fills.");
-  assert.match(tikz, /line width=2\.00pt/, "TikZ export should include facet override weights.");
-  assert.match(tikz, /\(0\.500,0\.866\) circle/, "TikZ should use positive mathematical y coordinates, not SVG y coordinates.");
-  assert.match(tikz, /\\node\[inner sep=0pt\] at \(0\.000,1\.000\) \{\$v\$\};/, "TikZ label offsets should use the same centered anchor semantics as SVG labels.");
+  assert.match(tikz, /line width=0\.75pt/, "TikZ export should scale facet weights from SVG pixels to TikZ points.");
+  assert.match(tikz, /\(0\.500,0\.866\) circle \(0\.079\)/, "TikZ should use visible vertex radii in mathematical coordinates.");
+  assert.match(tikz, /\\node\[inner sep=0pt, scale=1\.00\] at \(0\.000,1\.000\) \{\$v\$\};/, "TikZ label offsets should use the same centered anchor semantics as SVG labels.");
   assert.match(tikz, /\$\\lambda\$/, "TikZ export should preserve alcove LaTeX labels.");
   assert.match(tikz, /\$s_1\$/, "TikZ export should preserve facet LaTeX labels.");
 

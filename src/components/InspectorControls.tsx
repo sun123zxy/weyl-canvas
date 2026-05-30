@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { darkColorPresets, lightColorPresets } from "../constants";
+import { darkColorPresets, defaultLabelSize, lightColorPresets } from "../constants";
 import type { Label } from "../types";
 
 export function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
@@ -72,7 +72,7 @@ export function LabelFields({
   label: Label | "mixed" | undefined;
   onChange: (label: Label | undefined) => void;
 }) {
-  const current = label === "mixed" || !label ? { latex: "", offset: { x: 0, y: 0 } } : label;
+  const current = label === "mixed" || !label ? { latex: "", offset: { x: 0, y: 0 }, size: defaultLabelSize } : { ...label, size: label.size ?? defaultLabelSize };
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -99,6 +99,7 @@ export function LabelFields({
         <NumberField label="Label X" value={current.offset.x} min={-120} max={120} step={1} onChange={(x) => onChange({ ...current, offset: { ...current.offset, x } })} />
         <NumberField label="Label Y" value={current.offset.y} min={-120} max={120} step={1} onChange={(y) => onChange({ ...current, offset: { ...current.offset, y } })} />
       </div>
+      <NumberField label="Label size" value={current.size} min={0.5} max={4} step={0.1} onChange={(size) => onChange({ ...current, size })} />
       <button type="button" className="secondary" onClick={() => onChange(current.latex ? { ...current, offset: { x: 0, y: 0 } } : undefined)}>
         Reset label offset
       </button>

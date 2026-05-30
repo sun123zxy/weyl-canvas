@@ -1,7 +1,7 @@
 import { memo, useEffect, useMemo, useState } from "react";
 import { centroid, generateA2Diagram, midpoint, projectA2 } from "../geometry/a2";
 import { renderMath } from "../mathjax";
-import { defaultFacetStyle, defaultVertexStyle } from "../constants";
+import { defaultFacetStyle, defaultLabelSize, defaultVertexStyle } from "../constants";
 import { distanceToOrigin, idsForKind, isSelected } from "../utils";
 import type {
   Alcove,
@@ -168,6 +168,7 @@ export const LabelLayer = memo(function LabelLayer({
           latex={entry.label.latex}
           anchor={entry.anchor}
           offset={entry.label.offset}
+          size={entry.label.size ?? defaultLabelSize}
           selected={isSelected(selection, entry.kind, entry.id)}
         />
       ))}
@@ -175,7 +176,7 @@ export const LabelLayer = memo(function LabelLayer({
   );
 });
 
-function MathLabel({ latex, anchor, offset, selected }: { latex: string; anchor: Vec2; offset: Vec2; selected: boolean }) {
+function MathLabel({ latex, anchor, offset, size, selected }: { latex: string; anchor: Vec2; offset: Vec2; size: number; selected: boolean }) {
   const [status, setStatus] = useState<MathStatus>("loading");
   const [svg, setSvg] = useState("");
 
@@ -218,7 +219,7 @@ function MathLabel({ latex, anchor, offset, selected }: { latex: string; anchor:
   }
 
   return (
-    <g className={selected ? "label selected" : "label"} transform={`translate(${x} ${y}) scale(1.25)`} dangerouslySetInnerHTML={{ __html: svg }} />
+    <g className={selected ? "label selected" : "label"} transform={`translate(${x} ${y}) scale(${size})`} dangerouslySetInnerHTML={{ __html: svg }} />
   );
 }
 

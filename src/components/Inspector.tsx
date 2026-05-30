@@ -9,9 +9,6 @@ import {
   clamp,
   labelForKind,
   mixedLabel,
-  mixedNumber,
-  mixedValue,
-  omit,
   round,
   updateMany,
 } from "../utils";
@@ -131,97 +128,72 @@ function ExportRegionPanel({
 }
 
 function AlcoveInspector({ ids, styles, onChange }: InspectorProps) {
-  const entries = ids.map((id) => styles.alcoves[id] ?? {});
-  const label = mixedLabel(entries);
-  const fill = mixedValue(entries, "fill");
   return (
     <>
-      <div className="propertyGroup">
-        <div className="inlineControlRow">
-          <span className="fieldLabel">Fill</span>
-          <span className="fieldStatus">{fill ? "Set" : "Unset"}</span>
-          <ColorField label="Fill" value={fill ?? "#d8e9ff"} onChange={(nextFill) => {
-            onChange({ ...styles, alcoves: updateMany(styles.alcoves, ids, (style) => ({ ...style, fill: nextFill })) });
-          }} />
-          <button type="button" className="secondary compact" onClick={() => {
-            onChange({ ...styles, alcoves: updateMany(styles.alcoves, ids, (style) => omit(style, "fill")) });
-          }}>Clear</button>
-        </div>
-        <ColorSwatches onSelect={(nextFill) => {
-          onChange({ ...styles, alcoves: updateMany(styles.alcoves, ids, (style) => ({ ...style, fill: nextFill })) });
-        }} />
-      </div>
-      <LabelFields focusKey={`alcove:${ids.join("|")}`} label={label} onChange={(next) => {
-        onChange({ ...styles, alcoves: updateMany(styles.alcoves, ids, (style) => ({ ...style, label: next })) });
-      }} />
+      <StyleColorControl
+        label="Fill"
+        mapKey="alcoves"
+        colorKey="fill"
+        ids={ids}
+        styles={styles}
+        onChange={onChange}
+        fallback="#d8e9ff"
+      />
+      <StyleLabelFields kind="alcove" mapKey="alcoves" ids={ids} styles={styles} onChange={onChange} />
     </>
   );
 }
 
 function FacetInspector({ ids, styles, onChange }: InspectorProps) {
-  const entries = ids.map((id) => styles.facetOverrides[id] ?? {});
-  const label = mixedLabel(entries);
   return (
     <>
-      <ColorField label="Color" value={mixedValue(entries, "color") ?? "#242933"} onChange={(color) => {
-        onChange({ ...styles, facetOverrides: updateMany(styles.facetOverrides, ids, (style) => ({ ...style, color })) });
-      }} />
-      <ColorSwatches onSelect={(color) => {
-        onChange({ ...styles, facetOverrides: updateMany(styles.facetOverrides, ids, (style) => ({ ...style, color })) });
-      }} />
-      <NumberField label="Weight" value={mixedNumber(entries, "weight", defaultFacetStyle.weight)} min={0.4} max={8} step={0.2} onChange={(weight) => {
-        onChange({ ...styles, facetOverrides: updateMany(styles.facetOverrides, ids, (style) => ({ ...style, weight })) });
-      }} />
-      <button type="button" className="secondary" onClick={() => {
-        const next = { ...styles.facetOverrides };
-        ids.forEach((id) => delete next[id]);
-        onChange({ ...styles, facetOverrides: next });
-      }}>Use wall style</button>
-      <LabelFields focusKey={`facet:${ids.join("|")}`} label={label} onChange={(next) => {
-        onChange({ ...styles, facetOverrides: updateMany(styles.facetOverrides, ids, (style) => ({ ...style, label: next })) });
-      }} />
+      <StyleColorControl
+        label="Color"
+        mapKey="facetOverrides"
+        colorKey="color"
+        ids={ids}
+        styles={styles}
+        onChange={onChange}
+        fallback={defaultFacetStyle.color}
+      />
+      <StyleNumberField label="Weight" mapKey="facetOverrides" fieldKey="weight" ids={ids} styles={styles} onChange={onChange} fallback={defaultFacetStyle.weight} min={0.4} max={8} step={0.2} />
+      <StyleLabelFields kind="facet" mapKey="facetOverrides" ids={ids} styles={styles} onChange={onChange} />
     </>
   );
 }
 
 function WallInspector({ ids, styles, onChange }: InspectorProps) {
-  const entries = ids.map((id) => styles.wallDefaults[id] ?? {});
-  const label = mixedLabel(entries);
   return (
     <>
-      <ColorField label="Fallback color" value={mixedValue(entries, "color") ?? "#242933"} onChange={(color) => {
-        onChange({ ...styles, wallDefaults: updateMany(styles.wallDefaults, ids, (style) => ({ ...style, color })) });
-      }} />
-      <ColorSwatches onSelect={(color) => {
-        onChange({ ...styles, wallDefaults: updateMany(styles.wallDefaults, ids, (style) => ({ ...style, color })) });
-      }} />
-      <NumberField label="Fallback weight" value={mixedNumber(entries, "weight", defaultFacetStyle.weight)} min={0.4} max={8} step={0.2} onChange={(weight) => {
-        onChange({ ...styles, wallDefaults: updateMany(styles.wallDefaults, ids, (style) => ({ ...style, weight })) });
-      }} />
-      <LabelFields focusKey={`wall:${ids.join("|")}`} label={label} onChange={(next) => {
-        onChange({ ...styles, wallDefaults: updateMany(styles.wallDefaults, ids, (style) => ({ ...style, label: next })) });
-      }} />
+      <StyleColorControl
+        label="Fallback color"
+        mapKey="wallDefaults"
+        colorKey="color"
+        ids={ids}
+        styles={styles}
+        onChange={onChange}
+        fallback={defaultFacetStyle.color}
+      />
+      <StyleNumberField label="Fallback weight" mapKey="wallDefaults" fieldKey="weight" ids={ids} styles={styles} onChange={onChange} fallback={defaultFacetStyle.weight} min={0.4} max={8} step={0.2} />
+      <StyleLabelFields kind="wall" mapKey="wallDefaults" ids={ids} styles={styles} onChange={onChange} />
     </>
   );
 }
 
 function VertexInspector({ ids, styles, onChange }: InspectorProps) {
-  const entries = ids.map((id) => styles.vertices[id] ?? {});
-  const label = mixedLabel(entries);
   return (
     <>
-      <ColorField label="Color" value={mixedValue(entries, "color") ?? "#242933"} onChange={(color) => {
-        onChange({ ...styles, vertices: updateMany(styles.vertices, ids, (style) => ({ ...style, color })) });
-      }} />
-      <ColorSwatches onSelect={(color) => {
-        onChange({ ...styles, vertices: updateMany(styles.vertices, ids, (style) => ({ ...style, color })) });
-      }} />
-      <NumberField label="Weight" value={mixedNumber(entries, "size", defaultVertexStyle.size)} min={1.5} max={12} step={0.5} onChange={(size) => {
-        onChange({ ...styles, vertices: updateMany(styles.vertices, ids, (style) => ({ ...style, size })) });
-      }} />
-      <LabelFields focusKey={`vertex:${ids.join("|")}`} label={label} onChange={(next) => {
-        onChange({ ...styles, vertices: updateMany(styles.vertices, ids, (style) => ({ ...style, label: next })) });
-      }} />
+      <StyleColorControl
+        label="Color"
+        mapKey="vertices"
+        colorKey="color"
+        ids={ids}
+        styles={styles}
+        onChange={onChange}
+        fallback={defaultVertexStyle.color}
+      />
+      <StyleNumberField label="Weight" mapKey="vertices" fieldKey="size" ids={ids} styles={styles} onChange={onChange} fallback={defaultVertexStyle.size} min={1.5} max={12} step={0.5} />
+      <StyleLabelFields kind="vertex" mapKey="vertices" ids={ids} styles={styles} onChange={onChange} />
     </>
   );
 }
@@ -231,3 +203,172 @@ type InspectorProps = {
   styles: Styles;
   onChange: (styles: Styles) => void;
 };
+
+type StyleMapKey = keyof Styles;
+type StyleEntry = Styles[StyleMapKey][string];
+type ColorKey = "color" | "fill";
+type NumberKey = "weight" | "size";
+type StyleFieldKey = ColorKey | NumberKey | "label";
+
+function StyleColorControl({
+  label,
+  mapKey,
+  colorKey,
+  ids,
+  styles,
+  onChange,
+  fallback,
+}: InspectorProps & {
+  label: string;
+  mapKey: StyleMapKey;
+  colorKey: ColorKey;
+  fallback: string;
+}) {
+  const entries = styleEntries(styles, mapKey, ids);
+  const value = mixedStyleString(entries, colorKey);
+  return (
+    <UnsetColorControl
+      label={label}
+      value={value}
+      fallback={fallback}
+      status={colorStatus(value, hasDefinedStyleValue(entries, colorKey))}
+      onSelect={(color) => patchStyleMap(styles, onChange, mapKey, ids, (style) => ({ ...style, [colorKey]: color }))}
+      onClear={() => patchStyleMap(styles, onChange, mapKey, ids, (style) => omitStyleField(style, colorKey))}
+    />
+  );
+}
+
+function StyleNumberField({
+  label,
+  mapKey,
+  fieldKey,
+  ids,
+  styles,
+  onChange,
+  fallback,
+  min,
+  max,
+  step,
+}: InspectorProps & {
+  label: string;
+  mapKey: StyleMapKey;
+  fieldKey: NumberKey;
+  fallback: number;
+  min: number;
+  max: number;
+  step: number;
+}) {
+  const entries = styleEntries(styles, mapKey, ids);
+  return (
+    <NumberField
+      label={label}
+      value={mixedStyleNumber(entries, fieldKey, fallback)}
+      min={min}
+      max={max}
+      step={step}
+      onChange={(value) => patchStyleMap(styles, onChange, mapKey, ids, (style) => ({ ...style, [fieldKey]: value }))}
+    />
+  );
+}
+
+function StyleLabelFields({
+  kind,
+  mapKey,
+  ids,
+  styles,
+  onChange,
+}: InspectorProps & {
+  kind: ObjectKind;
+  mapKey: StyleMapKey;
+}) {
+  const entries = styleEntries(styles, mapKey, ids);
+  return (
+    <LabelFields
+      focusKey={`${kind}:${ids.join("|")}`}
+      label={mixedLabel(entries)}
+      onChange={(label) => patchStyleMap(styles, onChange, mapKey, ids, (style) => ({ ...style, label }))}
+    />
+  );
+}
+
+function styleEntries(styles: Styles, mapKey: StyleMapKey, ids: string[]): StyleEntry[] {
+  return ids.map((id) => styles[mapKey][id] ?? {});
+}
+
+function patchStyleMap(
+  styles: Styles,
+  onChange: (styles: Styles) => void,
+  mapKey: StyleMapKey,
+  ids: string[],
+  update: (style: StyleEntry) => StyleEntry,
+) {
+  onChange({
+    ...styles,
+    [mapKey]: updateMany(styles[mapKey], ids, update),
+  });
+}
+
+function mixedStyleString(entries: StyleEntry[], key: ColorKey): string | undefined {
+  const value = mixedStyleValue(entries, key);
+  return typeof value === "string" ? value : undefined;
+}
+
+function mixedStyleNumber(entries: StyleEntry[], key: NumberKey, fallback: number): number {
+  const value = mixedStyleValue(entries, key);
+  return typeof value === "number" ? value : fallback;
+}
+
+function mixedStyleValue(entries: StyleEntry[], key: StyleFieldKey): unknown {
+  const values = entries
+    .map((entry) => styleField(entry, key))
+    .filter((value) => value !== undefined);
+  if (values.length === 0) return undefined;
+  return values.every((value) => value === values[0]) ? values[0] : undefined;
+}
+
+function hasDefinedStyleValue(entries: StyleEntry[], key: StyleFieldKey) {
+  return entries.some((entry) => styleField(entry, key) !== undefined);
+}
+
+function styleField(entry: StyleEntry, key: StyleFieldKey) {
+  return (entry as Record<string, unknown>)[key];
+}
+
+function omitStyleField(entry: StyleEntry, key: StyleFieldKey): StyleEntry {
+  const next = { ...entry } as Record<string, unknown>;
+  delete next[key];
+  return next as StyleEntry;
+}
+
+function UnsetColorControl({
+  label,
+  value,
+  fallback,
+  status,
+  onSelect,
+  onClear,
+}: {
+  label: string;
+  value?: string;
+  fallback: string;
+  status: "Set" | "Unset" | "Mixed";
+  onSelect: (color: string) => void;
+  onClear: () => void;
+}) {
+  return (
+    <div className="propertyGroup">
+      <div className="inlineControlRow">
+        <span className="fieldLabel">{label}</span>
+        <span className="fieldStatus">{status}</span>
+        <ColorField label={label} value={value ?? fallback} onChange={onSelect} />
+        <button type="button" className="secondary compact" onClick={onClear}>Clear</button>
+      </div>
+      <ColorSwatches onSelect={onSelect} />
+    </div>
+  );
+}
+
+function colorStatus(value: string | undefined, hasAnyValue: boolean): "Set" | "Unset" | "Mixed" {
+  if (value) return "Set";
+  return hasAnyValue ? "Mixed" : "Unset";
+}

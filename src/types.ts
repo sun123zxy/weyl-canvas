@@ -8,6 +8,7 @@ export type ObjectKind = "alcove" | "facet" | "wall" | "vertex";
 export type Label = {
   latex: string;
   offset: Vec2;
+  size?: number;
 };
 
 export type WallFamily = "x" | "y" | "sum";

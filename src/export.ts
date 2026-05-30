@@ -1,4 +1,5 @@
 import { A2_UNIT, centroid, midpoint, projectA2 } from "./geometry/a2";
+import { defaultLabelSize } from "./constants";
 import type { Diagram, ExportRegion, Facet, Label, LineStyle, Styles, Vec2, VertexStyle } from "./types";
 
 const defaultFacetStyle: Required<Pick<LineStyle, "color" | "weight">> = {
@@ -10,6 +11,8 @@ const defaultVertexStyle: Required<Pick<VertexStyle, "color" | "size">> = {
   color: "#242933",
   size: 3.5,
 };
+
+const PT_PER_CM = 28.45;
 
 export function serializeSvg(svg: SVGSVGElement, region: ExportRegion) {
   const clone = svg.cloneNode(true) as SVGSVGElement;
@@ -73,7 +76,7 @@ export function buildTikz(diagram: Diagram, styles: Styles, region?: ExportRegio
     const style = resolveFacetStyle(facet, styles);
     const from = tikzPoint(facet.from);
     const to = tikzPoint(facet.to);
-    lines.push(`\\draw[${colorName(style.color)}, line width=${style.weight.toFixed(2)}pt] ${from} -- ${to};`);
+    lines.push(`\\draw[${colorName(style.color)}, line width=${tikzLineWidth(style.weight)}pt] ${from} -- ${to};`);
   }
 
   for (const vertex of diagram.vertices) {
@@ -82,7 +85,7 @@ export function buildTikz(diagram: Diagram, styles: Styles, region?: ExportRegio
     if (region && !pointsIntersectRegion([vertex.coord], region)) continue;
     const color = colorName(style.color ?? defaultVertexStyle.color);
     const size = style.size ?? defaultVertexStyle.size;
-    lines.push(`\\fill[${color}] ${tikzPoint(vertex.coord)} circle (${(size / 14).toFixed(2)}pt);`);
+    lines.push(`\\fill[${color}] ${tikzPoint(vertex.coord)} circle (${(size / A2_UNIT).toFixed(3)});`);
   }
 
   emitLabels(lines, colorName, diagram, styles, region);
@@ -146,7 +149,7 @@ function emitLabels(
 function labelNode(label: Label, anchor: Vec2): string {
   const base = projectA2(anchor);
   const shifted = { x: base.x + label.offset.x, y: base.y + label.offset.y };
-  return `\\node[inner sep=0pt] at ${tikzPointFromSvg(shifted)} {$${label.latex}$};`;
+  return `\\node[inner sep=0pt, scale=${(label.size ?? defaultLabelSize).toFixed(2)}] at ${tikzPointFromSvg(shifted)} {$${label.latex}$};`;
 }
 
 function tikzPoint(point: Vec2): string {
@@ -155,6 +158,10 @@ function tikzPoint(point: Vec2): string {
 
 function tikzPointFromSvg(point: Vec2): string {
   return `(${(point.x / A2_UNIT).toFixed(3)},${(-point.y / A2_UNIT).toFixed(3)})`;
+}
+
+function tikzLineWidth(svgWidth: number): string {
+  return ((svgWidth / A2_UNIT) * PT_PER_CM).toFixed(2);
 }
 
 function lengthSquared(point: Vec2): number {

@@ -1,3 +1,4 @@
+import { defaultLabelSize } from "./constants";
 import type { Label, ObjectKind, SelectionItem } from "./types";
 
 export function isSelected(selection: SelectionItem[], kind: ObjectKind, id: string) {
@@ -53,7 +54,8 @@ export function mixedLabel(entries: { label?: Label }[]): Label | "mixed" | unde
   return labels.every((label) => (
     label.latex === first.latex &&
     label.offset.x === first.offset.x &&
-    label.offset.y === first.offset.y
+    label.offset.y === first.offset.y &&
+    (label.size ?? defaultLabelSize) === (first.size ?? defaultLabelSize)
   )) ? first : "mixed";
 }
 

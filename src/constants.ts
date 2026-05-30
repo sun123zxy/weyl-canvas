@@ -2,6 +2,7 @@ import type { ExportRegion, Styles } from "./types";
 
 export const defaultFacetStyle = { color: "#242933", weight: 1.2 };
 export const defaultVertexStyle = { color: "#242933", size: 3.5 };
+export const defaultLabelSize = 1;
 
 export const emptyStyles: Styles = {
   alcoves: {},
