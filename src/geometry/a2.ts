@@ -1,7 +1,7 @@
+import { A2_UNIT } from "../metrics";
 import type { Alcove, Diagram, Facet, Vec2, Vertex, Wall, WallFamily } from "../types";
 
 export const A2_RANGE = 8;
-export const A2_UNIT = 76;
 const SQRT3 = Math.sqrt(3);
 
 const families: WallFamily[] = ["x", "y", "sum"];

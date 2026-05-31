@@ -8,8 +8,18 @@ const root = process.cwd();
 const tempDir = await mkdtemp(path.join(os.tmpdir(), "weyl-canvas-test-"));
 
 try {
+  const metricsSource = await readFile(path.join(root, "src", "metrics.ts"), "utf8");
+  const metricsTranspiled = ts.transpileModule(metricsSource, {
+    compilerOptions: {
+      module: ts.ModuleKind.ES2022,
+      target: ts.ScriptTarget.ES2022,
+      verbatimModuleSyntax: true,
+    },
+  }).outputText;
+  await writeFile(path.join(tempDir, "metrics.mjs"), metricsTranspiled, "utf8");
+
   const source = await readFile(path.join(root, "src", "geometry", "a2.ts"), "utf8");
-  const transpiled = ts.transpileModule(source, {
+  const transpiled = ts.transpileModule(source.replace('from "../metrics"', 'from "../metrics.mjs"'), {
     compilerOptions: {
       module: ts.ModuleKind.ES2022,
       target: ts.ScriptTarget.ES2022,
@@ -55,7 +65,8 @@ try {
   const exportTranspiled = ts.transpileModule(
     exportSource
       .replace('from "./geometry/a2"', 'from "./geometry/a2.mjs"')
-      .replace('from "./constants"', 'from "./constants.mjs"'),
+      .replace('from "./constants"', 'from "./constants.mjs"')
+      .replace('from "./metrics"', 'from "./metrics.mjs"'),
     {
       compilerOptions: {
         module: ts.ModuleKind.ES2022,
@@ -104,7 +115,7 @@ try {
       [labeledVertex.id]: {
         color: "#0000ff",
         size: 6,
-        label: { latex: "v", offset: { x: 0, y: -76 } },
+        label: { latex: "v", offset: { x: 0, y: -76 }, size: 1.8 },
       },
     },
   }, { x: -300, y: -300, width: 600, height: 600 });
@@ -115,7 +126,7 @@ try {
   assert.match(tikz, /\\fill\[wc\d+\]/, "TikZ export should include alcove fills.");
   assert.match(tikz, /line width=0\.75pt/, "TikZ export should scale facet weights from SVG pixels to TikZ points.");
   assert.match(tikz, /\(0\.500,0\.866\) circle \(0\.079\)/, "TikZ should use visible vertex radii in mathematical coordinates.");
-  assert.match(tikz, /\\node\[inner sep=0pt, scale=1\.00\] at \(0\.000,1\.000\) \{\$v\$\};/, "TikZ label offsets should use the same centered anchor semantics as SVG labels.");
+  assert.match(tikz, /\\node\[inner sep=0pt, font=\\fontsize\{10\.78pt\}\{12\.94pt\}\\selectfont\] at \(0\.000,1\.000\) \{\$v\$\};/, "TikZ labels should export their configured scale through the shared SVG-to-TikZ metric.");
   assert.match(tikz, /\$\\lambda\$/, "TikZ export should preserve alcove LaTeX labels.");
   assert.match(tikz, /\$s_1\$/, "TikZ export should preserve facet LaTeX labels.");
 
