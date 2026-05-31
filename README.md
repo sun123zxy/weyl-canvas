@@ -1,6 +1,6 @@
 # Weyl Canvas
 
-A frontend editor for producing illustrations of rank-2 affine Weyl groups. Currently supports A2 only.
+A frontend editor for producing illustrations of rank-2 affine Weyl groups. Supports A2, B2, and G2.
 
 - Color / label / highlight alcoves, facets, walls, and vertices
 - LaTeX support for labels via MathJax

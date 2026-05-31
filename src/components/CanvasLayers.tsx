@@ -1,16 +1,21 @@
 import { memo, useEffect, useMemo, useState } from "react";
-import { centroid, generateA2Diagram, midpoint, projectA2 } from "../geometry/a2";
+import { centroid, midpoint } from "../geometry/rank2";
+import { coweightToSvg } from "../metrics";
 import { renderMath } from "../mathjax";
-import { defaultFacetStyle, defaultLabelSize, defaultVertexStyle } from "../constants";
-import { distanceToOrigin, idsForKind, isSelected } from "../utils";
+import { referenceVectors } from "../referenceVectors";
+import { resolveAlcoveStyle, resolveFacetStyle, resolveVertexStyle } from "../styleResolver";
+import { idsForKind, isSelected } from "../utils";
+import { referenceVectorStyle } from "../visualSpec";
 import type {
   Alcove,
   AlcoveStyle,
+  DefaultStyles,
+  Diagram,
   ExportRegion,
   Facet,
   Label,
-  LineStyle,
   ObjectKind,
+  Rank2System,
   SelectionItem,
   Styles,
   Vec2,
@@ -37,17 +42,22 @@ export const AlcoveLayer = memo(function AlcoveLayer({
   alcoves,
   styles,
   selection,
+  diagram,
+  defaults,
 }: {
   alcoves: Alcove[];
   styles: Record<string, AlcoveStyle>;
   selection: SelectionItem[];
+  diagram: Diagram;
+  defaults: DefaultStyles;
 }) {
   const selectedIds = useMemo(() => idsForKind(selection, "alcove"), [selection]);
   return (
     <g>
       {alcoves.map((alcove) => {
         const selected = selectedIds.has(alcove.id);
-        const points = alcove.vertices.map(projectA2).map((point) => `${point.x},${point.y}`).join(" ");
+        const style = resolveAlcoveStyle(styles[alcove.id], defaults);
+        const points = alcove.vertices.map((vertex) => coweightToSvg(diagram.system, vertex)).map((point) => `${point.x},${point.y}`).join(" ");
         return (
           <polygon
             key={alcove.id}
@@ -55,7 +65,8 @@ export const AlcoveLayer = memo(function AlcoveLayer({
             data-select-kind="alcove"
             data-select-id={alcove.id}
             points={points}
-            fill={styles[alcove.id]?.fill ?? "transparent"}
+            fill={style.fill}
+            fillOpacity={style.fillOpacity}
           />
         );
       })}
@@ -67,10 +78,14 @@ export const FacetLayer = memo(function FacetLayer({
   facets,
   styles,
   selection,
+  diagram,
+  defaults,
 }: {
   facets: Facet[];
   styles: Styles;
   selection: SelectionItem[];
+  diagram: Diagram;
+  defaults: DefaultStyles;
 }) {
   const selectedFacetIds = useMemo(() => idsForKind(selection, "facet"), [selection]);
   const selectedWallIds = useMemo(() => idsForKind(selection, "wall"), [selection]);
@@ -78,9 +93,9 @@ export const FacetLayer = memo(function FacetLayer({
   return (
     <g>
       {facets.map((facet) => {
-        const from = projectA2(facet.from);
-        const to = projectA2(facet.to);
-        const style = resolveFacetStyle(facet, styles);
+        const from = coweightToSvg(diagram.system, facet.from);
+        const to = coweightToSvg(diagram.system, facet.to);
+        const style = resolveFacetStyle(facet, styles, defaults);
         const selected = selectedFacetIds.has(facet.id) || selectedWallIds.has(facet.wallId);
 
         return (
@@ -104,7 +119,7 @@ export const FacetLayer = memo(function FacetLayer({
               y2={to.y}
               stroke={style.color}
               strokeWidth={style.weight}
-              vectorEffect="non-scaling-stroke"
+              strokeOpacity={style.opacity}
               pointerEvents="none"
             />
           </g>
@@ -118,19 +133,22 @@ export const VertexLayer = memo(function VertexLayer({
   vertices,
   styles,
   selection,
+  diagram,
+  defaults,
 }: {
   vertices: Vertex[];
   styles: Record<string, VertexStyle>;
   selection: SelectionItem[];
+  diagram: Diagram;
+  defaults: DefaultStyles;
 }) {
   const selectedIds = useMemo(() => idsForKind(selection, "vertex"), [selection]);
   return (
     <g>
       {vertices.map((vertex) => {
-        const point = projectA2(vertex.coord);
-        const style = styles[vertex.id];
+        const point = coweightToSvg(diagram.system, vertex.coord);
+        const style = resolveVertexStyle(styles[vertex.id], defaults);
         const selected = selectedIds.has(vertex.id);
-        const size = style?.size ?? defaultVertexStyle.size;
         return (
           <circle
             key={vertex.id}
@@ -139,9 +157,9 @@ export const VertexLayer = memo(function VertexLayer({
             data-select-id={vertex.id}
             cx={point.x}
             cy={point.y}
-            r={selected || style ? size : 2.2}
-            fill={style?.color ?? defaultVertexStyle.color}
-            vectorEffect="non-scaling-stroke"
+            r={style.size}
+            fill={style.color}
+            fillOpacity={style.opacity}
           />
         );
       })}
@@ -153,12 +171,14 @@ export const LabelLayer = memo(function LabelLayer({
   diagram,
   styles,
   selection,
+  defaults,
 }: {
-  diagram: ReturnType<typeof generateA2Diagram>;
+  diagram: Diagram;
   styles: Styles;
   selection: SelectionItem[];
+  defaults: DefaultStyles;
 }) {
-  const labels = useMemo(() => collectLabels(diagram, styles), [diagram, styles]);
+  const labels = useMemo(() => collectLabels(diagram, styles, defaults), [defaults, diagram, styles]);
 
   return (
     <g>
@@ -167,8 +187,9 @@ export const LabelLayer = memo(function LabelLayer({
           key={`${entry.kind}:${entry.id}:${entry.label.latex}`}
           latex={entry.label.latex}
           anchor={entry.anchor}
-          offset={entry.label.offset}
-          size={entry.label.size ?? defaultLabelSize}
+          offset={entry.label.offset ?? entry.defaults.offset}
+          size={entry.label.size ?? entry.defaults.size}
+          system={diagram.system}
           selected={isSelected(selection, entry.kind, entry.id)}
         />
       ))}
@@ -176,7 +197,7 @@ export const LabelLayer = memo(function LabelLayer({
   );
 });
 
-function MathLabel({ latex, anchor, offset, size, selected }: { latex: string; anchor: Vec2; offset: Vec2; size: number; selected: boolean }) {
+function MathLabel({ latex, anchor, offset, size, system, selected }: { latex: string; anchor: Vec2; offset: Vec2; size: number; system: Rank2System; selected: boolean }) {
   const [status, setStatus] = useState<MathStatus>("loading");
   const [svg, setSvg] = useState("");
 
@@ -198,7 +219,7 @@ function MathLabel({ latex, anchor, offset, size, selected }: { latex: string; a
     };
   }, [latex]);
 
-  const point = projectA2(anchor);
+  const point = coweightToSvg(system, anchor);
   const x = point.x + offset.x;
   const y = point.y + offset.y;
 
@@ -223,45 +244,73 @@ function MathLabel({ latex, anchor, offset, size, selected }: { latex: string; a
   );
 }
 
-function resolveFacetStyle(facet: Facet, styles: Styles): Required<Pick<LineStyle, "color" | "weight">> {
-  const wall = styles.wallDefaults[facet.wallId];
-  const own = styles.facetOverrides[facet.id];
-  return {
-    color: own?.color ?? wall?.color ?? defaultFacetStyle.color,
-    weight: own?.weight ?? wall?.weight ?? defaultFacetStyle.weight,
-  };
+export function ReferenceVectorOverlay({ system, weight }: { system: Rank2System; weight: number }) {
+  const vectors = referenceVectors(system);
+
+  if (weight <= 0) return null;
+
+  return (
+    <g className="referenceVectorOverlay" pointerEvents="none">
+      {vectors.map(({ id, coord, color }) => {
+        const vector = coweightToSvg(system, coord);
+        const length = Math.hypot(vector.x, vector.y) || 1;
+        const unit = { x: vector.x / length, y: vector.y / length };
+        const end = { x: vector.x, y: vector.y };
+        const headSize = weight * referenceVectorStyle.arrowHeadMultiplier;
+        const shaftEnd = { x: end.x - unit.x * headSize, y: end.y - unit.y * headSize };
+        return (
+          <g key={id}>
+            <line
+              x1={0}
+              y1={0}
+              x2={shaftEnd.x}
+              y2={shaftEnd.y}
+              stroke={color}
+              strokeWidth={weight}
+              strokeLinecap="round"
+            />
+            <ArrowHead end={end} unit={unit} color={color} size={headSize} />
+          </g>
+        );
+      })}
+    </g>
+  );
 }
 
-function collectLabels(diagram: ReturnType<typeof generateA2Diagram>, styles: Styles) {
-  const labels: { id: string; kind: ObjectKind; anchor: Vec2; label: Label }[] = [];
+function ArrowHead({ end, unit, color, size }: { end: Vec2; unit: Vec2; color: string; size: number }) {
+  const normal = { x: -unit.y, y: unit.x };
+  const base = { x: end.x - unit.x * size, y: end.y - unit.y * size };
+  const left = { x: base.x + normal.x * size * 0.45, y: base.y + normal.y * size * 0.45 };
+  const right = { x: base.x - normal.x * size * 0.45, y: base.y - normal.y * size * 0.45 };
+  return (
+    <polygon
+      points={`${end.x},${end.y} ${left.x},${left.y} ${right.x},${right.y}`}
+      fill={color}
+    />
+  );
+}
+
+type VisibleLabel = Label & { latex: string };
+
+function collectLabels(diagram: Diagram, styles: Styles, defaults: DefaultStyles) {
+  const labels: { id: string; kind: ObjectKind; anchor: Vec2; label: VisibleLabel; defaults: { offset: Vec2; size: number } }[] = [];
 
   for (const alcove of diagram.alcoves) {
     const label = styles.alcoves[alcove.id]?.label;
-    if (label?.latex.trim()) labels.push({ id: alcove.id, kind: "alcove", anchor: centroid(alcove.vertices), label });
+    if (hasVisibleLatex(label)) labels.push({ id: alcove.id, kind: "alcove", anchor: centroid(alcove.vertices), label, defaults: defaults.alcove.label });
   }
   for (const facet of diagram.facets) {
     const label = styles.facetOverrides[facet.id]?.label;
-    if (label?.latex.trim()) labels.push({ id: facet.id, kind: "facet", anchor: midpoint(facet.from, facet.to), label });
-  }
-  for (const wall of diagram.walls) {
-    const label = styles.wallDefaults[wall.id]?.label;
-    if (!label?.latex.trim()) continue;
-    let bestFacet: Facet | undefined;
-    let bestDistance = Infinity;
-    for (const facet of diagram.facets) {
-      if (facet.wallId !== wall.id) continue;
-      const distance = distanceToOrigin(midpoint(facet.from, facet.to));
-      if (distance < bestDistance) {
-        bestDistance = distance;
-        bestFacet = facet;
-      }
-    }
-    if (bestFacet) labels.push({ id: wall.id, kind: "wall", anchor: midpoint(bestFacet.from, bestFacet.to), label });
+    if (hasVisibleLatex(label)) labels.push({ id: facet.id, kind: "facet", anchor: midpoint(facet.from, facet.to), label, defaults: defaults.facet.label });
   }
   for (const vertex of diagram.vertices) {
     const label = styles.vertices[vertex.id]?.label;
-    if (label?.latex.trim()) labels.push({ id: vertex.id, kind: "vertex", anchor: vertex.coord, label });
+    if (hasVisibleLatex(label)) labels.push({ id: vertex.id, kind: "vertex", anchor: vertex.coord, label, defaults: defaults.vertex.label });
   }
 
   return labels;
+}
+
+function hasVisibleLatex(label: Label | undefined): label is VisibleLabel {
+  return Boolean(label?.latex?.trim());
 }

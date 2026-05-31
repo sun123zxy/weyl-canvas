@@ -1,8 +1,9 @@
 :root {
   color: #1e232b;
   background: #f3f4f1;
-  --hover-glow: drop-shadow(0 0 4px rgba(47, 109, 179, 0.45));
-  --selected-glow: drop-shadow(0 0 7px rgba(31, 95, 170, 0.85));
+  --checkerboard-base: #ffffff;
+  --checkerboard-tile: #dde3dc;
+  --checkerboard-size: 20px;
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
@@ -21,7 +22,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -85,18 +87,13 @@ button.compact {
 
 .brand {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 12px;
   min-width: 245px;
 }
 
 .brand strong {
   font-size: 16px;
-}
-
-.brand span {
-  color: #66705f;
-  font-size: 13px;
 }
 
 .mathJaxBadge {
@@ -130,6 +127,23 @@ button.compact {
   flex-wrap: wrap;
 }
 
+.toolbarSelect {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #4e5660;
+  font-size: 13px;
+}
+
+.toolbarSelect select {
+  height: 28px;
+  border: 1px solid #c9cec7;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #20242a;
+  padding: 3px 7px;
+}
+
 .workspace {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 300px;
@@ -150,10 +164,6 @@ button.compact {
   background: #f7f8f4;
 }
 
-.canvasBackground {
-  fill: #f7f8f4;
-}
-
 .alcove {
   cursor: pointer;
   outline: none;
@@ -162,21 +172,15 @@ button.compact {
 }
 
 .alcove:hover {
-  stroke: #2f6db3;
-  stroke-width: 1.4;
-  vector-effect: non-scaling-stroke;
-  filter: var(--hover-glow);
+  stroke: transparent;
+  stroke-width: 0;
+  filter: url("#alcoveHoverInnerGlow");
 }
 
 .alcove.selected {
-  stroke: #1f5faa;
-  stroke-width: 2.2;
-  vector-effect: non-scaling-stroke;
-  filter: var(--selected-glow);
-}
-
-.facet {
-  vector-effect: non-scaling-stroke;
+  stroke: transparent;
+  stroke-width: 0;
+  filter: url("#alcoveSelectedInnerGlow");
 }
 
 .facetHit {
@@ -186,41 +190,29 @@ button.compact {
   vector-effect: non-scaling-stroke;
 }
 
-.facetHit:hover + .facet {
-  stroke-width: 3.2;
-  filter: var(--hover-glow);
+.facetHit:hover + .facet:not(.selected) {
+  filter: url("#lineHoverGlow");
 }
 
 .facet.selected {
-  stroke-width: 3.8;
-  filter: var(--selected-glow);
+  filter: url("#lineSelectedGlow");
 }
 
 .vertex {
   cursor: pointer;
-  vector-effect: non-scaling-stroke;
 }
 
-.vertex:hover,
-.vertex.selected {
-  stroke: #2f6db3;
-  stroke-width: 1.8;
-  filter: var(--hover-glow);
+.vertex:hover:not(.selected) {
+  filter: url("#pointHoverGlow");
 }
 
 .vertex.selected {
-  stroke: #1f5faa;
-  stroke-width: 2.4;
-  filter: var(--selected-glow);
+  filter: url("#pointSelectedGlow");
 }
 
 .label {
   pointer-events: none;
   color: #20242a;
-}
-
-.label.selected {
-  filter: var(--selected-glow);
 }
 
 .labelText {
@@ -245,9 +237,49 @@ button.compact {
   overflow: auto;
 }
 
+.inspectorTabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.inspectorTabs button {
+  padding: 6px 4px;
+}
+
+.inspectorTabs button.active {
+  border-color: #8db7e8;
+  background: #eef6ff;
+  color: #1f5faa;
+}
+
+.objectTabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  margin-bottom: 14px;
+}
+
+.objectTabs button {
+  padding: 5px 3px;
+  font-size: 12px;
+}
+
+.objectTabs button.active {
+  border-color: #8db7e8;
+  background: #eef6ff;
+  color: #1f5faa;
+}
+
 .inspector h2 {
   margin: 0 0 16px;
   font-size: 17px;
+}
+
+.defaultObjectPanel {
+  border-top: 1px solid #dde1d8;
+  padding-top: 14px;
 }
 
 .inspector p {
@@ -295,6 +327,86 @@ button.compact {
   padding: 2px;
 }
 
+.toggleField {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 12px;
+  color: #4e5660;
+  font-size: 13px;
+}
+
+.toggleField > input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+}
+
+.toggleField > input[type="color"] {
+  width: 42px;
+  height: 32px;
+  border: 1px solid #cbd1c8;
+  border-radius: 6px;
+  background: #ffffff;
+  padding: 2px;
+}
+
+.toggleField > input[type="number"] {
+  width: 92px;
+  border: 1px solid #cbd1c8;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #20242a;
+  padding: 7px 8px;
+}
+
+.toggleField > input[type="text"] {
+  width: 150px;
+  min-width: 0;
+  border: 1px solid #cbd1c8;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #20242a;
+  padding: 7px 8px;
+}
+
+.sliderInput {
+  display: grid;
+  grid-template-columns: minmax(90px, 1fr) 68px;
+  align-items: center;
+  gap: 8px;
+  min-width: 150px;
+}
+
+.sliderInput input[type="range"] {
+  width: 100%;
+}
+
+.sliderInput input[type="number"] {
+  width: 68px;
+  border: 1px solid #cbd1c8;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #20242a;
+  padding: 7px 8px;
+}
+
+.compactPair {
+  display: grid;
+  grid-template-columns: 74px 74px;
+  gap: 6px;
+}
+
+.compactPair input {
+  min-width: 0;
+  border: 1px solid #cbd1c8;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #20242a;
+  padding: 7px 8px;
+}
+
 .colorSwatches {
   display: grid;
   gap: 5px;
@@ -326,33 +438,6 @@ button.compact {
   gap: 8px;
 }
 
-.inlineControlRow {
-  display: grid;
-  grid-template-columns: auto 1fr auto auto;
-  align-items: center;
-  gap: 8px;
-}
-
-.inlineControlRow .field {
-  margin-bottom: 0;
-  grid-template-columns: auto;
-}
-
-.inlineControlRow .field span {
-  display: none;
-}
-
-.fieldLabel {
-  color: #4e5660;
-  font-size: 13px;
-}
-
-.fieldStatus {
-  margin: 0;
-  color: #66705f;
-  font-size: 12px;
-}
-
 .fieldRow {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -374,6 +459,13 @@ button.compact {
   padding-top: 16px;
 }
 
+.labelEditor h4 {
+  margin: 0 0 10px;
+  color: #66705f;
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .exportRegion {
   fill: none;
   stroke: #1f5faa;
@@ -389,8 +481,42 @@ button.compact {
   padding-top: 16px;
 }
 
+.globalPanel.first {
+  border-top: 0;
+  margin-top: 0;
+  padding-top: 0;
+}
+
 .globalPanel h2 {
   margin-bottom: 12px;
+}
+
+.checkboxField {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 12px;
+  color: #4e5660;
+  font-size: 13px;
+}
+
+.checkboxField input {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+}
+
+.vectorLegend {
+  color: #4e5660;
+}
+
+.corootLegend {
+  font-weight: 650;
+}
+
+.coweightLegend {
+  font-weight: 650;
 }
 
 .buttonRow {
@@ -438,20 +564,26 @@ button.compact {
   overflow: auto;
   border-right: 1px solid #dde1d8;
   background:
-    linear-gradient(45deg, #eef1ea 25%, transparent 25%),
-    linear-gradient(-45deg, #eef1ea 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, #eef1ea 75%),
-    linear-gradient(-45deg, transparent 75%, #eef1ea 75%);
-  background-color: #fbfcf9;
-  background-position: 0 0, 0 10px, 10px -10px, -10px 0;
-  background-size: 20px 20px;
+    linear-gradient(45deg, var(--checkerboard-tile) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--checkerboard-tile) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--checkerboard-tile) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--checkerboard-tile) 75%);
+  background-color: var(--checkerboard-base);
+  background-position:
+    0 0,
+    0 calc(var(--checkerboard-size) / 2),
+    calc(var(--checkerboard-size) / 2) calc(var(--checkerboard-size) / -2),
+    calc(var(--checkerboard-size) / -2) 0;
+  background-size: var(--checkerboard-size) var(--checkerboard-size);
   padding: 14px;
 }
 
 .exportPreview svg {
+  display: block;
+  width: auto;
+  height: auto;
   max-width: 100%;
   max-height: 100%;
-  background: #f7f8f4;
   box-shadow: 0 0 0 1px rgba(32, 36, 42, 0.08);
 }
 
@@ -472,6 +604,12 @@ button.compact {
   border-top: 1px solid #dde1d8;
   color: #66705f;
   font-size: 13px;
+}
+
+.modalActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .modalHeader h2 {

@@ -1,8 +1,35 @@
-import type { ExportRegion, Styles } from "./types";
+import type { DefaultStyles, ExportRegion, Styles } from "./types";
 
-export const defaultFacetStyle = { color: "#242933", weight: 1.2 };
-export const defaultVertexStyle = { color: "#242933", size: 3.5 };
-export const defaultLabelSize = 1;
+export const defaultFacetStyle = { color: "#242933", weight: 1 };
+export const defaultVertexStyle = { color: "#242933", size: 2.4 };
+export const defaultLabelSize = 1.6;
+
+export const initialDefaultStyles: DefaultStyles = {
+  alcove: {
+    fill: "#ffffff",
+    fillOpacity: 1,
+    label: {
+      offset: { x: 0, y: 0 },
+      size: defaultLabelSize,
+    },
+  },
+  facet: {
+    ...defaultFacetStyle,
+    colorOpacity: 1,
+    label: {
+      offset: { x: 0, y: 0 },
+      size: defaultLabelSize,
+    },
+  },
+  vertex: {
+    ...defaultVertexStyle,
+    colorOpacity: 1,
+    label: {
+      offset: { x: 0, y: 0 },
+      size: defaultLabelSize,
+    },
+  },
+};
 
 export const emptyStyles: Styles = {
   alcoves: {},

@@ -3,12 +3,16 @@ import { useEffect, useRef, useState } from "react";
 export type ExportModal = {
   title: string;
   code: string;
+  filename: string;
+  mimeType: string;
   previewSvg?: string;
 };
 
 export function CopyModal({
   title,
   code,
+  filename,
+  mimeType,
   previewSvg,
   onClose,
 }: ExportModal & {
@@ -31,6 +35,17 @@ export function CopyModal({
     }
   };
 
+  const download = () => {
+    const blob = new Blob([code], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+    setStatus("Downloaded");
+  };
+
   return (
     <div className="modalBackdrop" role="presentation" onMouseDown={onClose}>
       <section className="copyModal" role="dialog" aria-modal="true" aria-label={title} onMouseDown={(event) => event.stopPropagation()}>
@@ -46,7 +61,10 @@ export function CopyModal({
         </div>
         <footer className="modalFooter">
           <span>{status}</span>
-          <button type="button" onClick={copy}>Copy</button>
+          <div className="modalActions">
+            <button type="button" onClick={copy}>Copy</button>
+            <button type="button" onClick={download}>Download</button>
+          </div>
         </footer>
       </section>
     </div>
