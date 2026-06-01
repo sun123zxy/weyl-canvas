@@ -230,6 +230,24 @@ button.compact {
   fill: #bf2f2f;
 }
 
+.inlineMath {
+  color: currentColor;
+}
+
+.inlineMath mjx-container,
+.inlineMath svg,
+.inlineMath svg * {
+  color: currentColor;
+  fill: currentColor;
+  stroke: currentColor;
+}
+
+.inlineMath.muted {
+  color: #879080;
+  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: 12px;
+}
+
 .inspector {
   border-left: 1px solid #d9ddd6;
   background: #fbfcf9;
@@ -523,6 +541,25 @@ button.compact {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
+}
+
+.rootSystemInfo {
+  color: #4e5660;
+}
+
+.rootSystemEquation {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  overflow: hidden;
+  color: #20242a;
+  font-size: 12px;
+  padding: 4px 0 2px;
+}
+
+.rootSystemEquation > span {
+  flex: 0 0 auto;
 }
 
 .modalBackdrop {

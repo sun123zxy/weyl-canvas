@@ -1,9 +1,11 @@
 import { maxGridRange, minGridRange } from "../constants";
+import { rootSystems } from "../geometry/rank2";
 import { useEditorStore } from "../store";
 import { clamp, round } from "../utils";
 import { referenceVectorStyle } from "../visualSpec";
 import type { ExportRegion } from "../types";
 import { NumberField } from "./InspectorControls";
+import { MathText } from "./MathText";
 
 export function GlobalPanel({ onUseCurrentView }: { onUseCurrentView: () => void }) {
   const exportRegion = useEditorStore((state) => state.exportRegion);
@@ -15,6 +17,8 @@ export function GlobalPanel({ onUseCurrentView }: { onUseCurrentView: () => void
   const onEditorCheckerboardChange = useEditorStore((state) => state.setEditorCheckerboard);
   const showReferenceVectors = useEditorStore((state) => state.showReferenceVectors);
   const onShowReferenceVectorsChange = useEditorStore((state) => state.setShowReferenceVectors);
+  const rootSystemType = useEditorStore((state) => state.rootSystemType);
+  const rootSystem = rootSystems[rootSystemType];
 
   return (
     <>
@@ -31,6 +35,7 @@ export function GlobalPanel({ onUseCurrentView }: { onUseCurrentView: () => void
         onUseCurrentView={onUseCurrentView}
         onReset={onResetExportRegion}
       />
+      <RootSystemInfo cartan={rootSystem.cartan} />
     </>
   );
 }
@@ -120,6 +125,26 @@ function ExportRegionPanel({
       <div className="buttonRow">
         <button type="button" onClick={onUseCurrentView}>Use current view</button>
         <button type="button" onClick={onReset}>Reset</button>
+      </div>
+    </section>
+  );
+}
+
+function RootSystemInfo({ cartan }: { cartan: readonly [readonly [number, number], readonly [number, number]] }) {
+  const corootStyle = { color: referenceVectorStyle.corootColor };
+  const coweightStyle = { color: referenceVectorStyle.coweightColor };
+  const corootLatex = String.raw`\begin{pmatrix}\alpha_1^\vee\\ \alpha_2^\vee\end{pmatrix}`;
+  const matrixLatex = String.raw`\begin{pmatrix}${cartan[0][0]}&${cartan[0][1]}\\ ${cartan[1][0]}&${cartan[1][1]}\end{pmatrix}`;
+  const coweightLatex = String.raw`\begin{pmatrix}\varpi_1^\vee\\ \varpi_2^\vee\end{pmatrix}`;
+
+  return (
+    <section className="globalPanel rootSystemInfo">
+      <h2>Root System</h2>
+      <div className="rootSystemEquation" aria-label="Simple coroots in the coweight basis">
+        <span style={corootStyle}><MathText latex={corootLatex} /></span>
+        <MathText latex="=" />
+        <MathText latex={matrixLatex} />
+        <span style={coweightStyle}><MathText latex={coweightLatex} /></span>
       </div>
     </section>
   );

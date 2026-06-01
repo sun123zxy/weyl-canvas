@@ -9,6 +9,8 @@ type MathJaxWindow = Window & {
       promise?: Promise<void>;
     };
     tex2svgPromise?: (latex: string, options: { display: boolean }) => Promise<HTMLElement>;
+    typesetPromise?: (elements?: HTMLElement[]) => Promise<void>;
+    typesetClear?: (elements?: HTMLElement[]) => void;
   };
 };
 
@@ -18,6 +20,8 @@ type ReadyMathJax = {
     promise?: Promise<void>;
   };
   tex2svgPromise: (latex: string, options: { display: boolean }) => Promise<HTMLElement>;
+  typesetPromise?: (elements?: HTMLElement[]) => Promise<void>;
+  typesetClear?: (elements?: HTMLElement[]) => void;
 };
 
 let mathJaxReady: Promise<ReadyMathJax> | undefined;
@@ -43,6 +47,12 @@ export function renderMath(latex: string): Promise<RenderedMath> {
 
 export function ensureMathJaxReady(): Promise<void> {
   return waitForMathJax().then(() => undefined);
+}
+
+export async function typesetMathElement(element: HTMLElement): Promise<void> {
+  const mathJax = await waitForMathJax();
+  mathJax.typesetClear?.([element]);
+  await mathJax.typesetPromise?.([element]);
 }
 
 async function compileMath(latex: string): Promise<RenderedMath> {
