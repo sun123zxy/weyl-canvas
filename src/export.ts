@@ -77,7 +77,7 @@ export function buildTikz(
     lines.push(`\\fill[${colorName(style.color)}, opacity=${style.opacity.toFixed(2)}] ${tikzPoint(diagram.system, vertex.coord)} circle (${svgToTikzLength(style.size).toFixed(3)});`);
   }
 
-  emitLabels(lines, colorName, diagram, styles, defaults, region);
+  emitLabels(lines, diagram, styles, defaults);
   if (options.showReferenceVectors) {
     emitReferenceVectors(lines, colorName, diagram.system, referenceVectorWeight(defaults.facet.weight));
   }
@@ -100,16 +100,15 @@ function emitReferenceVectors(
 
 function emitLabels(
   lines: string[],
-  colorName: (hex: string) => string,
   diagram: Diagram,
   styles: Styles,
   defaults: DefaultStyles,
-  region?: ExportRegion,
 ) {
+  // Label bounds depend on offsets and TeX layout. Let the clip path crop them.
   for (const alcove of diagram.alcoves) {
     const label = styles.alcoves[alcove.id]?.label;
     const anchor = centroid(alcove.vertices);
-    if (hasVisibleLatex(label) && (!region || pointInRegion(diagram.system, anchor, region))) {
+    if (hasVisibleLatex(label)) {
       lines.push(labelNode(diagram.system, label, anchor, defaults.alcove.label));
     }
   }
@@ -117,14 +116,14 @@ function emitLabels(
   for (const facet of diagram.facets) {
     const label = styles.facetOverrides[facet.id]?.label;
     const anchor = midpoint(facet.from, facet.to);
-    if (hasVisibleLatex(label) && (!region || pointInRegion(diagram.system, anchor, region))) {
+    if (hasVisibleLatex(label)) {
       lines.push(labelNode(diagram.system, label, anchor, defaults.facet.label));
     }
   }
 
   for (const vertex of diagram.vertices) {
     const label = styles.vertices[vertex.id]?.label;
-    if (hasVisibleLatex(label) && (!region || pointInRegion(diagram.system, vertex.coord, region))) {
+    if (hasVisibleLatex(label)) {
       lines.push(labelNode(diagram.system, label, vertex.coord, defaults.vertex.label));
     }
   }
@@ -185,12 +184,4 @@ function pointsIntersectRegion(system: Rank2System, points: Vec2[], region: Expo
     minX <= region.x + region.width &&
     maxY >= region.y &&
     minY <= region.y + region.height;
-}
-
-function pointInRegion(system: Rank2System, point: Vec2, region: ExportRegion) {
-  const projected = coweightToSvg(system, point);
-  return projected.x >= region.x &&
-    projected.x <= region.x + region.width &&
-    projected.y >= region.y &&
-    projected.y <= region.y + region.height;
 }
