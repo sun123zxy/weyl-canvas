@@ -193,6 +193,43 @@ try {
   assert.match(tikz, /\$\\lambda\$/, "TikZ export should preserve alcove LaTeX labels.");
   assert.match(tikz, /\$s_1\$/, "TikZ export should preserve facet LaTeX labels.");
 
+  const { initialDefaultStyles } = await import(`file://${path.join(tempDir, "constants.mjs").replaceAll("\\", "/")}`);
+  const labelRegion = { x: -10, y: -100, width: 20, height: 20 };
+  const labelCases = [
+    { kind: "alcove", map: "alcoves", id: styledAlcove.id, anchor: rank2.centroid(styledAlcove.vertices) },
+    { kind: "facet", map: "facetOverrides", id: styledFacet.id, anchor: rank2.midpoint(styledFacet.from, styledFacet.to) },
+    { kind: "vertex", map: "vertices", id: labeledVertex.id, anchor: labeledVertex.coord },
+  ];
+
+  for (const { kind, map, id, anchor } of labelCases) {
+    const projected = metrics.coweightToSvg(diagram.system, anchor);
+    assert.ok(projected.x < labelRegion.x || projected.x > labelRegion.x + labelRegion.width ||
+      projected.y < labelRegion.y || projected.y > labelRegion.y + labelRegion.height,
+    `The ${kind} test anchor should be outside the export region.`);
+    const offset = { x: -projected.x, y: -90 - projected.y };
+    const labelStyles = { alcoves: {}, facetOverrides: {}, wallDefaults: {}, vertices: {} };
+    labelStyles[map][id] = { label: { latex: "x", offset } };
+    const shiftedLabel = buildTikz(diagram, labelStyles, labelRegion);
+    assert.match(shiftedLabel, /at \(0\.000,1\.184\) \{\$x\$\};/,
+      `TikZ should preserve a ${kind} label moved into the export region from an outside anchor.`);
+
+    const labelDefaults = {
+      ...initialDefaultStyles,
+      [kind]: { ...initialDefaultStyles[kind], label: { ...initialDefaultStyles[kind].label, offset } },
+    };
+    labelStyles[map][id] = { label: { latex: "x" } };
+    const defaultShiftedLabel = buildTikz(diagram, labelStyles, labelRegion, labelDefaults);
+    assert.match(defaultShiftedLabel, /at \(0\.000,1\.184\) \{\$x\$\};/,
+      `TikZ should also preserve ${kind} labels moved by their default offset.`);
+  }
+
+  const edgeLabel = buildTikz(diagram, {
+    alcoves: {}, facetOverrides: {}, wallDefaults: {},
+    vertices: { [labeledVertex.id]: { label: { latex: "x", offset: { x: -12, y: -90 } } } },
+  }, labelRegion);
+  assert.match(edgeLabel, /at \(-0\.158,1\.184\) \{\$x\$\};/,
+    "TikZ should let the clip path retain visible text even when its center lies outside the region.");
+
   const tikzWithOverlay = buildTikz(diagram, {
     alcoves: {},
     facetOverrides: {},
